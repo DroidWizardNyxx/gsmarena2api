@@ -77,3 +77,25 @@ async def all_devices(page: int = 1, limit: int = 10):
     devices = paginate_model(db_session, Device, page, limit)
 
     return dict(devices=devices, total_devices=total_devices, page=page, size=limit)
+
+@router.get("/search/{query}")
+async def search_devices_by_name(query: str, db: Session = Depends(get_db)):
+    """
+    Busca por aparelhos no banco de dados cujo nome contenha o texto da query.
+    """
+    # Prepara o termo de busca para ser usado em uma consulta SQL LIKE.
+    # Os '%' são curingas que significam "qualquer coisa antes ou depois".
+    search_query = f"%{query}%"
+
+    # Faz a consulta no banco de dados usando o SQLAlchemy.
+    # Ele vai procurar em models.Device na coluna 'name' por qualquer coisa que
+    # corresponda ao padrão (ex: %galaxy s24%).
+    devices = db.query(models.Device).filter(models.Device.name.like(search_query)).all()
+
+    # Se a lista de aparelhos retornada estiver vazia, retorna um erro 404.
+    if not devices:
+        raise HTTPException(status_code=404, detail="Nenhum aparelho encontrado com esse nome.")
+    
+    # Se encontrou, retorna a lista de aparelhos.
+    return devices
+
