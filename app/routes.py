@@ -4,8 +4,9 @@ from sqlalchemy.orm import joinedload
 from gsmarena_scraper import GSMArenaScraper
 
 from . import schemas
-from .database import db_session # Usamos o db_session importado diretamente
-from .models import Brand, Device, DeviceSpecification, models # Adicionei models aqui para a busca
+from .database import db_session
+# A linha abaixo foi corrigida
+from .models import Brand, Device, DeviceSpecification
 from .utils import paginate_model
 
 router = APIRouter()
@@ -79,21 +80,15 @@ async def all_devices(page: int = 1, limit: int = 10):
     return dict(devices=devices, total_devices=total_devices, page=page, size=limit)
 
 
-# --- NOVO ENDPOINT DE BUSCA CORRIGIDO ---
 @router.get("/search/{query}")
 async def search_devices_by_name(query: str):
     """
     Busca por aparelhos no banco de dados cujo nome contenha o texto da query.
     """
-    # Prepara o termo de busca para a consulta SQL.
     search_query = f"%{query}%"
-
-    # Faz a consulta usando o db_session, igual ao resto do arquivo.
     devices = db_session.query(Device).filter(Device.name.ilike(search_query)).all()
 
-    # Se a lista de aparelhos estiver vazia, retorna um erro 404.
     if not devices:
         raise HTTPException(status_code=404, detail="Nenhum aparelho encontrado com esse nome.")
     
-    # Se encontrou, retorna a lista de aparelhos.
     return devices
